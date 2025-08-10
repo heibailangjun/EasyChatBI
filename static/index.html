@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TableGPT 数据分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4ade80;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .model-badge {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .session-id {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .upload-section, .query-section, .result-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .section-title::before {
+            content: "";
+            display: block;
+            width: 6px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #4361ee;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f0f4ff;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        .upload-area:hover {
+            background: #e0e8ff;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.1);
+        }
+        
+        .upload-text {
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .btn-secondary:hover {
+            background: #dee2e6;
+            color: #212529;
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .query-container {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+        
+        .result-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .result-type {
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .result-content {
+            flex: 1;
+            overflow: auto;
+        }
+        
+        .result-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 300px;
+            color: #868e96;
+            font-style: italic;
+        }
+        
+        .suggestions {
+            background: #f8f9ff;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .suggestion-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .suggestion-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+        
+        .suggestion-item:hover {
+            background: #eef2ff;
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .code-container {
+            margin-top: 20px;
+        }
+        
+        .code-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .code-preview {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Fira Code', monospace;
+        }
+        
+        .visualization-container {
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        #result-image {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background-color: #f0f4ff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
+        
+        .text-result {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #868e96;
+        }
+        
+        .status-indicator.active {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+        
+        .status-indicator.error {
+            background: var(--error);
+        }
+        
+        .example-queries {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .example-query {
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .example-query:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+        
+        footer {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .result-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .query-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .example-queries {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>TableGPT 数据分析平台</h1>
+                    <div class="model-badge">Qwen Max + TableGPT</div>
+                </div>
+                <div class="session-info">
+                    <span>会话ID:</span>
+                    <span id="session-display" class="session-id">未开始</span>
+                </div>
+            </div>
+        </header>
+        
+        <section class="upload-section">
+            <div class="section-title">1. 上传数据文件</div>
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📊</div>
+                <p class="upload-text">拖拽CSV/Excel文件到此处或点击上传</p>
+                <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden>
+                <button class="btn" onclick="document.getElementById('file-input').click()">
+                    <span>⬆️ 选择文件</span>
+                </button>
+            </div>
+            <div id="file-info" class="hidden">
+                <div class="file-info">
+                    <span>已上传文件:</span>
+                    <span id="file-name" class="file-name"></span>
+                </div>
+            </div>
+        </section>
+        
+        <section class="query-section">
+            <div class="section-title">2. 输入分析需求</div>
+            <div class="query-container">
+                <div>
+                    <textarea id="query-input" placeholder="例如：显示销售额最高的5个产品 或 分析各产品季度增长趋势..."></textarea>
+                    
+                    <div class="example-queries">
+                        <div class="example-query" onclick="fillExample('显示销售额最高的5个产品')">显示销售额最高的5个产品</div>
+                        <div class="example-query" onclick="fillExample('分析各产品季度增长趋势')">分析各产品季度增长趋势</div>
+                        <div class="example-query" onclick="fillExample('计算每个地区的平均销售额')">计算每个地区的平均销售额</div>
+                        <div class="example-query" onclick="fillExample('绘制销售额与利润的散点图')">绘制销售额与利润的散点图</div>
+                    </div>
+                </div>
+                <button class="btn" id="analyze-btn" disabled>
+                    <span>🔍 开始分析</span>
+                </button>
+            </div>
+        </section>
+        
+        <section class="result-section">
+            <div class="section-title">3. 分析结果</div>
+            <div class="result-container">
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-title">执行结果</div>
+                        <div id="result-type" class="result-type">等待分析</div>
+                    </div>
+                    <div id="result-content" class="result-content">
+                        <div id="result-placeholder" class="result-placeholder">
+                            分析结果将显示在此处
+                        </div>
+                        <div id="table-result" class="hidden"></div>
+                        <div id="chart-result" class="hidden">
+                            <div class="visualization-container">
+                                <canvas id="chart-canvas"></canvas>
+                            </div>
+                        </div>
+                        <div id="text-result" class="text-result hidden"></div>
+                        <div id="image-result" class="hidden">
+                            <img id="result-image">
+                        </div>
+                    </div>
+                    
+                    <div class="code-container">
+                        <div class="code-title">生成代码</div>
+                        <pre id="code-preview" class="code-preview hidden"></pre>
+                    </div>
+                    
+                    <div class="status-bar">
+                        <div id="status-indicator" class="status-indicator"></div>
+                        <span id="status-text">就绪</span>
+                    </div>
+                </div>
+                
+                <div class="result-card suggestions">
+                    <div class="suggestion-title">推荐问题</div>
+                    <div id="suggestions-container">
+                        <div class="result-placeholder">推荐问题将显示在此处</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>TableGPT 数据分析平台 &copy; 2025 | 基于 Qwen Max 和 TableGPT 技术</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentSessionId = null;
+        let currentChart = null;
+        let currentFile = null;
+        
+        // DOM元素
+        const fileInput = document.getElementById('file-input');
+        const fileNameSpan = document.getElementById('file-name');
+        const fileInfoDiv = document.getElementById('file-info');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const queryInput = document.getElementById('query-input');
+        const sessionDisplay = document.getElementById('session-display');
+        const tableResult = document.getElementById('table-result');
+        const chartResult = document.getElementById('chart-result');
+        const textResult = document.getElementById('text-result');
+        const imageResult = document.getElementById('image-result');
+        const resultImage = document.getElementById('result-image');
+        const resultPlaceholder = document.getElementById('result-placeholder');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const codePreview = document.getElementById('code-preview');
+        const chartCanvas = document.getElementById('chart-canvas');
+        const resultTypeSpan = document.getElementById('result-type');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        
+        // 文件上传处理
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // 显示文件信息
+            fileNameSpan.textContent = file.name;
+            fileInfoDiv.classList.remove('hidden');
+            analyzeBtn.disabled = true;
+            currentFile = file;
+            
+            // 更新状态
+            updateStatus('上传中...', 'warning');
+            
+            try {
+                // 上传文件到后端
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('文件上传失败');
+                
+                const data = await response.json();
+                currentSessionId = data.session_id;
+                sessionDisplay.textContent = currentSessionId.slice(0, 8) + '...';
+                analyzeBtn.disabled = false;
+                
+                updateStatus('文件上传成功', 'success');
+                
+            } catch (error) {
+                updateStatus(`错误: ${error.message}`, 'error');
+                analyzeBtn.disabled = true;
+            }
+        });
+        
+        // 分析按钮点击事件
+        analyzeBtn.addEventListener('click', async () => {
+            const query = queryInput.value.trim();
+            if (!query) return alert('请输入分析问题');
+            if (!currentSessionId) return alert('请先上传数据文件');
+            
+            // 重置UI
+            resetResultsUI();
+            
+            // 显示加载状态
+            const originalBtnText = analyzeBtn.innerHTML;
+            analyzeBtn.innerHTML = '<div class="spinner" style="margin-right: 8px;"></div> 分析中...';
+            analyzeBtn.disabled = true;
+    
+            try {
+                // 更新状态
+                updateStatus('分析中...', 'warning');
+                
+                // 发送分析请求
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        query: query
+                    })
+                });
+        
+                if (!response.ok) throw new Error('分析请求失败');
+        
+                const result = await response.json();
+                console.log('完整响应:', result); // 添加详细日志
+        
+                // 显示分析结果
+                displayAnalysisResult(result);
+        
+                updateStatus('分析完成', 'success');
+        
+            } catch (error) {
+                console.error('分析错误:', error);
+                updateStatus(`分析错误: ${error.message}`, 'error');
+            } finally {
+                analyzeBtn.innerHTML = originalBtnText;
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        
+        // 填充示例问题
+        function fillExample(query) {
+            queryInput.value = query;
+        }
+        
+        // 重置结果UI
+        function resetResultsUI() {
+            // 隐藏所有结果容器
+            tableResult.classList.add('hidden');
+            chartResult.classList.add('hidden');
+            textResult.classList.add('hidden');
+            imageResult.classList.add('hidden');
+            codePreview.classList.add('hidden');
+            resultPlaceholder.classList.remove('hidden');
+            
+            // 清除现有内容
+            tableResult.innerHTML = '';
+            textResult.innerHTML = '';
+            suggestionsContainer.innerHTML = '<div class="result-placeholder">生成中...</div>';
+            
+            // 销毁现有图表
+            if (currentChart) {
+                currentChart.destroy();
+                currentChart = null;
+            }
+        }
+        
+        // 更新状态指示器
+        function updateStatus(text, type = '') {
+            statusText.textContent = text;
+            
+            // 重置状态指示器类
+            statusIndicator.className = 'status-indicator';
+            
+            switch(type) {
+                case 'success':
+                    statusIndicator.classList.add('active');
+                    break;
+                case 'warning':
+                    statusIndicator.style.background = 'var(--warning)';
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('error');
+                    break;
+                default:
+                    statusIndicator.style.background = '#868e96';
+            }
+        }
+        
+                // 显示分析结果
+        function displayAnalysisResult(response) {
+            // 隐藏占位符
+            resultPlaceholder.classList.add('hidden');
+            
+            // 1. 显示结果
+            // 检查响应是否有效
+            if (!response) {
+                displayTextResult("无响应数据");
+                return;
+            }
+
+            // 检查result字段是否存在
+            const result = response.result;
+            if (!result) {
+                displayTextResult("无结果数据");
+                return;
+            }
+            
+            // 检查result.type是否存在
+            if (!result.type) {
+                displayTextResult("结果类型未定义");
+                return;
+            }
+            
+            // 根据类型显示结果
+            switch(result.type) {
+                case 'image':
+                    displayImageResult(result.data);
+                    break;
+                case 'table':
+                    displayTableResult(result.data);
+                    break;
+                case 'text':
+                    displayTextResult(result.data);
+                    break;
+                case 'composite': // 新增复合类型
+                    displayCompositeResult(result.data);
+                    break;
+                case 'error':
+                    displayTextResult("错误: " + result.data);
+                    break;
+                default:
+                    displayTextResult("未知结果类型: " + result.type);
+            }
+            
+            // 2. 显示生成的代码 - 使用response.generated_code
+            displayGeneratedCode(response.generated_code);
+            
+            // 3. 显示推荐问题 - 使用response.suggested_questions
+            displaySuggestions(response.suggested_questions);
+        }
+        
+        function displayCompositeResult(data) {
+            // 显示文本结果
+            textResult.textContent = data.text;
+            textResult.classList.remove('hidden');
+            
+            // 显示图片结果
+            imageResult.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = `data:image/png;base64,${data.image}`;
+            img.id = 'result-image';
+            imageResult.appendChild(img);
+            imageResult.classList.remove('hidden');
+            
+            // 隐藏表格结果
+            tableResult.classList.add('hidden');
+        }
+
+        // 显示图片结果
+        function displayImageResult(base64Data) {
+            imageResult.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = `data:image/png;base64,${base64Data}`;
+            img.id = 'result-image';
+            imageResult.appendChild(img);
+            imageResult.classList.remove('hidden');
+            tableResult.classList.add('hidden');
+            textResult.classList.add('hidden');
+        }
+
+        // 显示文本结果
+        function displayTextResult(text) {
+            textResult.textContent = text;
+            textResult.classList.remove('hidden');
+            tableResult.classList.add('hidden');
+            imageResult.classList.add('hidden');
+        }
+
+        // 显示表格结果
+        function displayTableResult(data) {
+            // 清空表格
+            tableResult.innerHTML = '';
+            
+            // 创建表头
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            tableResult.appendChild(headerRow);
+            
+            // 填充数据行
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tableResult.appendChild(tr);
+            });
+            
+            tableResult.classList.remove('hidden');
+            imageResult.classList.add('hidden');
+            textResult.classList.add('hidden');
+        }
+
+        // 显示生成的代码
+        function displayGeneratedCode(code) {
+            const codePreview = document.getElementById('code-preview');
+            if (!code) {
+                codePreview.textContent = "无生成代码";
+            } else {
+                codePreview.textContent = code;
+                hljs.highlightElement(codePreview);
+            }
+            codePreview.classList.remove('hidden');
+        }
+
+        // 显示推荐问题
+        function displaySuggestions(questions) {
+            const container = document.getElementById('suggestions-container');
+            container.innerHTML = '';
+            
+            if (!questions || questions.length === 0) {
+                container.innerHTML = '<div class="result-placeholder">无推荐问题</div>';
+                return;
+            }
+            
+            questions.forEach(question => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item';
+                suggestionDiv.textContent = question;
+                
+                suggestionDiv.addEventListener('click', () => {
+                    queryInput.value = question;
+                    analyzeBtn.click();
+                });
+                
+                container.appendChild(suggestionDiv);
+            });
+        }
+        
+        // 拖放文件处理
+        const uploadArea = document.getElementById('upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#e0e8ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.backgroundColor = '#f0f4ff';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#f0f4ff';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        });
+        
+        // 初始化
+        updateStatus('就绪');
+    </script>
+</body>
+</html>
