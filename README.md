@@ -1,3 +1,13 @@
+<img width="3098" height="2185" alt="dfd6d48029e56d025751aa198fa57c7b" src="https://github.com/user-attachments/assets/1861041f-98b5-4203-8206-46e3ddca8863" />
+
+<img width="2201" height="2034" alt="70f2b6657c2650edc3e3d09e410e1321" src="https://github.com/user-attachments/assets/1e95eb71-4e0e-4835-875c-6c1f38f27aa4" />
+
+<img width="2364" height="1901" alt="325602bf2ca9b5583cdbc153117f89be" src="https://github.com/user-attachments/assets/4aa6684f-090b-4cad-8b04-bfa57c87bdf9" />
+
+<img width="2384" height="2006" alt="a97957a57eed904f35f7481d5dba91f0" src="https://github.com/user-attachments/assets/b2c7fbd2-d05d-4c93-b8e5-c25f55fc366e" />
+
+<img width="1969" height="2034" alt="6d8395927dfcca4ae02457f541c7ab47" src="https://github.com/user-attachments/assets/ae55175a-d538-49b1-9b30-ed9ee913a05a" />
+
 核心功能模块 
 
 一、应用初始化与配置 
